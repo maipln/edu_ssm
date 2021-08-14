@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.returnpanda.dao.UserMapper">
+
+    <!--分页多条件查询所有用户-->
+    <select id="findAllUserByPage" resultType="com.returnpanda.domain.User" parameterType="com.returnpanda.domain.UserVo">
+        SELECT id, NAME, portrait, phone, PASSWORD, STATUS, create_time FROM user
+        <where>
+            <if test="true">
+                and is_del !=1
+            </if>
+            <if test="username != null and username != '' ">
+                and name=#{username}
+            </if>
+            <if test="startCreateTime != null and endCreateTime != null">
+                and create_time Between #{startCreateTime} and #{endCreateTime}
+            </if>
+        </where>
+    </select>
+
+
+    <!--修改用户状态-->
+    <update id="updateUserStatus" parameterType="com.returnpanda.domain.User">
+        UPDATE USER SET STATUS = #{status} where id = #{id};
+    </update>
+
+
+    <!--用户登录(根据用户名查询具体用户信息)-->
+    <select id="login" parameterType="com.returnpanda.domain.User" resultType="com.returnpanda.domain.User">
+        select * from user where phone=#{phone}
+    </select>
+
+
+
+    <!--根据用户id清空中间表-->
+    <delete id="deleteUserContextRole" parameterType="int">
+        delete  from user_role_relation where user_id=#{id}
+    </delete>
+    
+    <!--分配角色-->
+    <insert id="userContextRole" parameterType="com.returnpanda.domain.User_Role_relation">
+        insert into user_role_relation values(null,#{userId},#{roleId},#{createdTime},#{updatedTime},#{createdBy},#{updatedby})
+    </insert>
+
+    <!--根据用户id查询该用户具备的角色信息-->
+    <select id="findUserRoleById" resultType="com.returnpanda.domain.Role" parameterType="int">
+        SELECT * FROM roles r INNER JOIN user_role_relation ur ON r.id=ur.role_id
+        WHERE ur.user_id = #{id}
+    </select>
+
+    <!--根据角色id查询角色关联的顶级菜单-->
+    <select id="findParentMenuByRoleId" parameterType="java.util.List" resultType="com.returnpanda.domain.Menu">
+        SELECT DISTINCT m.* FROM roles r INNER JOIN role_menu_relation rm ON r.id=rm.role_id INNER JOIN menu m ON rm.menu_id =m.id
+        WHERE
+        m.parent_id=-1 AND r.id
+        IN<foreach collection="list" item="item" open="("  separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <!--根据PID查询子菜单信息-->
+    <select id="findSubMentByPid" parameterType="int" resultType="com.returnpanda.domain.Menu">
+        select * from menu where parent_id=#{pid}
+    </select>
+
+    <!--获取用户拥有的资源权限信息-->
+    <select id="findResourceByRoleId" parameterType="java.util.List" resultType="com.returnpanda.domain.Resource">
+        SELECT DISTINCT r.*
+        FROM resource r INNER JOIN role_resource_relation rr ON rr.resource_id=r.id
+        INNER JOIN roles ro ON ro.id=rr.role_id
+        WHERE ro.id
+        IN<foreach collection="list" item="item" open="("  separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

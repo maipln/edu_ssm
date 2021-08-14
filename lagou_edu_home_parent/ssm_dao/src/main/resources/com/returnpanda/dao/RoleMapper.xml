@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.returnpanda.dao.RoleMapper">
+    <!--添加角色信息-->
+    <insert id="saveRole" parameterType="com.returnpanda.domain.Role">
+        insert into roles values
+        (null,#{code},#{name},#{description},#{createdTime},
+        #{updatedTime},#{createdBy},#{updatedBy})
+    </insert>
+
+    <!--修改角色信息-->
+    <update id="updateRole" parameterType="com.returnpanda.domain.Role">
+        UPDATE roles
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="code != null and code != '' ">code=#{code},</if>
+            <if test="name != null and name != '' ">name=#{name},</if>
+            <if test="description != null and description != '' ">description=#{description},</if>
+            <if test="updatedTime != null  ">updated_time=#{updatedTime}</if>
+        </trim>
+        <where>
+            <if test="id != null and id != '' ">id=#{id}</if>
+        </where>
+    </update>
+
+    <!--查询所有角色-->
+    <select id="findAllRole" resultType="com.returnpanda.domain.Role" parameterType="com.returnpanda.domain.Role">
+        select * from roles
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%',#{name},'%')
+            </if>
+        </where>
+    </select>
+
+    <!--根据角色id查询关联的菜单信息的ID-->
+    <select id="findMenuByRoleId" resultType="int" parameterType="int">
+        SELECT m.id FROM roles r
+        LEFT JOIN role_menu_relation rm ON r.id = rm.role_id
+        LEFT JOIN menu m ON m.id=rm.menu_id
+        WHERE r.id=#{roleid}
+    </select>
+
+    <!--根据roleid清空中间表关联关系-->
+    <delete id="deleteRoleContextMenu" parameterType="int">
+        delete from role_menu_relation where role_id=#{roleid}
+    </delete>
+
+    <!--为角色分配菜单信息-->
+    <insert id="roleContextMenu" parameterType="com.returnpanda.domain.Role_menu_relation">
+        insert into role_menu_relation values(null,#{menuId},#{roleId},#{createdTime},#{updatedTime},#{createdBy},#{updatedby})
+    </insert>
+
+    <!--删除角色(先删除关联关系)-->
+    <delete id="deleteRole" parameterType="int">
+        delete from roles where id =#{roleid}
+    </delete>
+</mapper>
